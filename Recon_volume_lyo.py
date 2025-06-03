@@ -4,6 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 import seaborn as sns
+from matplotlib.patches import Rectangle
 
 # Set page config and style
 st.set_page_config(page_title="Lyophilized Drug Product Reconstitution Calculator", layout="wide")
@@ -237,8 +238,10 @@ if st.session_state.calculate_clicked:
         ax.set_xticks(xpos + dx/2)
         ax.set_xticklabels(mass_data['Category'])
         
-        # Add legend with fancy box
-        legend = ax.legend(['Solid', 'Liquid'], 
+        # Create custom legend with patches
+        solid_patch = Rectangle((0, 0), 1, 1, fc='#ff9999', alpha=0.8)
+        liquid_patch = Rectangle((0, 0), 1, 1, fc='#99ccff', alpha=0.8)
+        legend = ax.legend([solid_patch, liquid_patch], ['Solid', 'Liquid'],
                           bbox_to_anchor=(1.15, 0.5),
                           loc='center left',
                           bbox_transform=ax.transAxes,
@@ -271,8 +274,8 @@ if st.session_state.calculate_clicked:
         plt.tight_layout()
         st.pyplot(fig)
 
-        with col2:
-            st.subheader("Volume Distribution")
+    with col2:
+        st.subheader("Volume Distribution")
         
         fig = plt.figure(figsize=(10, 8))
         ax = fig.add_subplot(111, projection='3d')
@@ -308,8 +311,10 @@ if st.session_state.calculate_clicked:
         ax.set_xticks(xpos + dx/2)
         ax.set_xticklabels(volume_data['Category'])
         
-        # Add legend with fancy box
-        legend = ax.legend(['Solid', 'Liquid'], 
+        # Create custom legend with patches
+        solid_patch = Rectangle((0, 0), 1, 1, fc='#ff9999', alpha=0.8)
+        liquid_patch = Rectangle((0, 0), 1, 1, fc='#99ccff', alpha=0.8)
+        legend = ax.legend([solid_patch, liquid_patch], ['Solid', 'Liquid'],
                           bbox_to_anchor=(1.15, 0.5),
                           loc='center left',
                           bbox_transform=ax.transAxes,
@@ -390,8 +395,10 @@ if st.session_state.calculate_clicked:
         ax.set_yticks([0, 1])
         ax.set_yticklabels(['Pre-Lyophilization', 'Post-Reconstitution'])
         
-        # Add legend with fancy box
-        legend = ax.legend(['Pre-Lyophilization', 'Post-Reconstitution'],
+        # Create custom legend with patches
+        pre_patch = Rectangle((0, 0), 1, 1, fc='royalblue', alpha=0.8)
+        post_patch = Rectangle((0, 0), 1, 1, fc='darkorange', alpha=0.8)
+        legend = ax.legend([pre_patch, post_patch], ['Pre-Lyophilization', 'Post-Reconstitution'],
                           bbox_to_anchor=(1.15, 0.5),
                           loc='center left',
                           bbox_transform=ax.transAxes,
