@@ -14,6 +14,10 @@ This application calculates the required diluent volume for reconstitution of ly
 accounting for solid content displacement and density corrections.
 """)
 
+# Initialize session state to track if calculation has been performed
+if 'calculate_clicked' not in st.session_state:
+    st.session_state.calculate_clicked = False
+
 # Create two columns for input parameters
 col1, col2 = st.columns(2)
 
@@ -51,176 +55,182 @@ with col2:
     brim_fill_volume = vial_options[selected_vial]
     st.write(f"Brim Fill Volume: {brim_fill_volume} mL")
 
-# Calculations
-total_solid_conc = drug_conc + hist_conc + hist_hcl_conc + sucrose_conc + ps80_conc
-wfi_conc = density_pre_lyo - total_solid_conc
+# Add a calculate button
+if st.button("Calculate Reconstitution Parameters", type="primary"):
+    st.session_state.calculate_clicked = True
 
-# Calculate per vial amounts
-drug_amount = drug_conc * filling_volume
-hist_amount = hist_conc * filling_volume
-hist_hcl_amount = hist_hcl_conc * filling_volume
-sucrose_amount = sucrose_conc * filling_volume
-ps80_amount = ps80_conc * filling_volume
-total_solid_amount = total_solid_conc * filling_volume
-wfi_amount = wfi_conc * filling_volume
+# Only show results if calculate button has been clicked
+if st.session_state.calculate_clicked:
+    # Calculations
+    total_solid_conc = drug_conc + hist_conc + hist_hcl_conc + sucrose_conc + ps80_conc
+    wfi_conc = density_pre_lyo - total_solid_conc
 
-# Calculate reconstitution parameters
-theoretical_solid_mass = total_solid_amount  # mg/vial
-diluent_mass_needed = (recon_volume * density_post_recon) - theoretical_solid_mass  # mg/vial
-diluent_volume_needed = diluent_mass_needed / diluent_density  # mL/vial
+    # Calculate per vial amounts
+    drug_amount = drug_conc * filling_volume
+    hist_amount = hist_conc * filling_volume
+    hist_hcl_amount = hist_hcl_conc * filling_volume
+    sucrose_amount = sucrose_conc * filling_volume
+    ps80_amount = ps80_conc * filling_volume
+    total_solid_amount = total_solid_conc * filling_volume
+    wfi_amount = wfi_conc * filling_volume
 
-# Calculate concentrations after reconstitution
-drug_conc_after = drug_amount / recon_volume
-hist_conc_after = hist_amount / recon_volume
-hist_hcl_conc_after = hist_hcl_amount / recon_volume
-sucrose_conc_after = sucrose_amount / recon_volume
-ps80_conc_after = ps80_amount / recon_volume
-wfi_conc_after = (wfi_amount + diluent_mass_needed) / recon_volume
+    # Calculate reconstitution parameters
+    theoretical_solid_mass = total_solid_amount  # mg/vial
+    diluent_mass_needed = (recon_volume * density_post_recon) - theoretical_solid_mass  # mg/vial
+    diluent_volume_needed = diluent_mass_needed / diluent_density  # mL/vial
 
-# Display results
-st.header("Calculation Results")
+    # Calculate concentrations after reconstitution
+    drug_conc_after = drug_amount / recon_volume
+    hist_conc_after = hist_amount / recon_volume
+    hist_hcl_conc_after = hist_hcl_amount / recon_volume
+    sucrose_conc_after = sucrose_amount / recon_volume
+    ps80_conc_after = ps80_amount / recon_volume
+    wfi_conc_after = (wfi_amount + diluent_mass_needed) / recon_volume
 
-col1, col2 = st.columns(2)
+    # Display results
+    st.header("Calculation Results")
 
-with col1:
-    st.subheader("Pre-Lyophilization Composition")
-    pre_lyo_data = {
-        "Component": [drug_name, "Histidine", "Histidine HCl", "Sucrose", "PS80", "Total Solids", "WFI"],
-        "Concentration (mg/mL)": [drug_conc, hist_conc, hist_hcl_conc, sucrose_conc, ps80_conc, total_solid_conc, wfi_conc],
-        "Amount per Vial (mg)": [drug_amount, hist_amount, hist_hcl_amount, sucrose_amount, ps80_amount, total_solid_amount, wfi_amount]
+    col1, col2 = st.columns(2)
+
+    with col1:
+        st.subheader("Pre-Lyophilization Composition")
+        pre_lyo_data = {
+            "Component": [drug_name, "Histidine", "Histidine HCl", "Sucrose", "PS80", "Total Solids", "WFI"],
+            "Concentration (mg/mL)": [drug_conc, hist_conc, hist_hcl_conc, sucrose_conc, ps80_conc, total_solid_conc, wfi_conc],
+            "Amount per Vial (mg)": [drug_amount, hist_amount, hist_hcl_amount, sucrose_amount, ps80_amount, total_solid_amount, wfi_amount]
+        }
+        pre_lyo_df = pd.DataFrame(pre_lyo_data)
+        st.dataframe(pre_lyo_df)
+
+    with col2:
+        st.subheader("Post-Reconstitution Composition")
+        post_recon_data = {
+            "Component": [drug_name, "Histidine", "Histidine HCl", "Sucrose", "PS80", "WFI"],
+            "Concentration (mg/mL)": [drug_conc_after, hist_conc_after, hist_hcl_conc_after, sucrose_conc_after, ps80_conc_after, wfi_conc_after]
+        }
+        post_recon_df = pd.DataFrame(post_recon_data)
+        st.dataframe(post_recon_df)
+
+    # Reconstitution calculation details
+    st.subheader("Reconstitution Calculation Details")
+    recon_details = {
+        "Parameter": ["Theoretical Solid Mass", "Mass of Diluent Needed", "Volume of Diluent to Add"],
+        "Value": [f"{theoretical_solid_mass:.2f} mg/vial", f"{diluent_mass_needed:.2f} mg/vial", f"{diluent_volume_needed:.4f} mL/vial"],
     }
-    pre_lyo_df = pd.DataFrame(pre_lyo_data)
-    st.dataframe(pre_lyo_df)
+    recon_df = pd.DataFrame(recon_details)
+    st.dataframe(recon_df)
 
-with col2:
-    st.subheader("Post-Reconstitution Composition")
-    post_recon_data = {
-        "Component": [drug_name, "Histidine", "Histidine HCl", "Sucrose", "PS80", "WFI"],
-        "Concentration (mg/mL)": [drug_conc_after, hist_conc_after, hist_hcl_conc_after, sucrose_conc_after, ps80_conc_after, wfi_conc_after]
+    # Visualizations
+    st.header("Visualizations")
+
+    # Prepare data for mass visualization
+    mass_data = {
+        'Category': ['Liquide+Solid', 'Solid', 'Recon+Solid'],
+        'Solid': [total_solid_amount/1000, total_solid_amount/1000, total_solid_amount/1000],  # Converting to grams
+        'Liquid': [wfi_amount/1000, 0, diluent_mass_needed/1000]  # Converting to grams
     }
-    post_recon_df = pd.DataFrame(post_recon_data)
-    st.dataframe(post_recon_df)
 
-# Reconstitution calculation details
-st.subheader("Reconstitution Calculation Details")
-recon_details = {
-    "Parameter": ["Theoretical Solid Mass", "Mass of Diluent Needed", "Volume of Diluent to Add"],
-    "Value": [f"{theoretical_solid_mass:.2f} mg/vial", f"{diluent_mass_needed:.2f} mg/vial", f"{diluent_volume_needed:.4f} mL/vial"],
-}
-recon_df = pd.DataFrame(recon_details)
-st.dataframe(recon_df)
+    # Prepare data for volume visualization
+    volume_data = {
+        'Category': ['Liquide+Solid', 'Solid', 'Recon+Solid'],
+        'Solid': [total_solid_amount/(density_pre_lyo), total_solid_amount/(density_pre_lyo), total_solid_amount/(density_post_recon)],
+        'Liquid': [wfi_amount/diluent_density, 0, diluent_volume_needed]
+    }
 
-# Visualizations
-st.header("Visualizations")
+    # Create two columns for the graphs
+    col1, col2 = st.columns(2)
 
-# Prepare data for mass visualization
-mass_data = {
-    'Category': ['Liquide+Solid', 'Solid', 'Recon+Solid'],
-    'Solid': [total_solid_amount/1000, total_solid_amount/1000, total_solid_amount/1000],  # Converting to grams
-    'Liquid': [wfi_amount/1000, 0, diluent_mass_needed/1000]  # Converting to grams
-}
+    with col1:
+        st.subheader("Mass Distribution")
+        
+        fig, ax = plt.subplots(figsize=(10, 6))
+        
+        # Create stacked bar chart for masses
+        bottom_mass = np.zeros(3)
+        
+        # Plot solid mass
+        solid_bars = ax.bar(mass_data['Category'], mass_data['Solid'], 
+                           label='Solid', color='#ff9999')
+        
+        # Plot liquid mass
+        liquid_bars = ax.bar(mass_data['Category'], mass_data['Liquid'], 
+                            bottom=mass_data['Solid'], label='Liquid', 
+                            color='#99ccff')
+        
+        # Customize the plot
+        ax.set_ylabel('Mass (g)')
+        ax.set_title('Mass Distribution Across Process Steps')
+        ax.legend()
+        
+        # Add value labels on the bars
+        for bars in [solid_bars, liquid_bars]:
+            for bar in bars:
+                height = bar.get_height()
+                if height > 0:  # Only label bars with non-zero height
+                    ax.text(bar.get_x() + bar.get_width()/2., 
+                           bar.get_y() + height/2.,
+                           f'{height:.2f}',
+                           ha='center', va='center')
+        
+        plt.tight_layout()
+        st.pyplot(fig)
 
-# Prepare data for volume visualization
-volume_data = {
-    'Category': ['Liquide+Solid', 'Solid', 'Recon+Solid'],
-    'Solid': [total_solid_amount/(density_pre_lyo), total_solid_amount/(density_pre_lyo), total_solid_amount/(density_post_recon)],
-    'Liquid': [wfi_amount/diluent_density, 0, diluent_volume_needed]
-}
+    with col2:
+        st.subheader("Volume Distribution")
+        
+        fig, ax = plt.subplots(figsize=(10, 6))
+        
+        # Create stacked bar chart for volumes
+        bottom_vol = np.zeros(3)
+        
+        # Plot solid volume
+        solid_bars = ax.bar(volume_data['Category'], volume_data['Solid'], 
+                           label='Solid', color='#ff9999')
+        
+        # Plot liquid volume
+        liquid_bars = ax.bar(volume_data['Category'], volume_data['Liquid'], 
+                            bottom=volume_data['Solid'], label='Liquid', 
+                            color='#99ccff')
+        
+        # Customize the plot
+        ax.set_ylabel('Volume (mL)')
+        ax.set_title('Volume Distribution Across Process Steps')
+        ax.legend()
+        
+        # Add value labels on the bars
+        for bars in [solid_bars, liquid_bars]:
+            for bar in bars:
+                height = bar.get_height()
+                if height > 0:  # Only label bars with non-zero height
+                    ax.text(bar.get_x() + bar.get_width()/2., 
+                           bar.get_y() + height/2.,
+                           f'{height:.2f}',
+                           ha='center', va='center')
+        
+        plt.tight_layout()
+        st.pyplot(fig)
 
-# Create two columns for the graphs
-col1, col2 = st.columns(2)
+    # Component comparison visualization
+    st.subheader("Component Concentration Comparison")
 
-with col1:
-    st.subheader("Mass Distribution")
-    
     fig, ax = plt.subplots(figsize=(10, 6))
-    
-    # Create stacked bar chart for masses
-    bottom_mass = np.zeros(3)
-    
-    # Plot solid mass
-    solid_bars = ax.bar(mass_data['Category'], mass_data['Solid'], 
-                       label='Solid', color='#ff9999')
-    
-    # Plot liquid mass
-    liquid_bars = ax.bar(mass_data['Category'], mass_data['Liquid'], 
-                        bottom=mass_data['Solid'], label='Liquid', 
-                        color='#99ccff')
-    
-    # Customize the plot
-    ax.set_ylabel('Mass (g)')
-    ax.set_title('Mass Distribution Across Process Steps')
+    components = [drug_name, "Histidine", "Histidine HCl", "Sucrose", "PS80"]
+    x = np.arange(len(components))
+    width = 0.35
+
+    ax.bar(x - width/2, [drug_conc, hist_conc, hist_hcl_conc, sucrose_conc, ps80_conc], 
+           width, label='Pre-Lyophilization', color='royalblue')
+    ax.bar(x + width/2, [drug_conc_after, hist_conc_after, hist_hcl_conc_after, sucrose_conc_after, ps80_conc_after], 
+           width, label='Post-Reconstitution', color='darkorange')
+
+    ax.set_ylabel('Concentration (mg/mL)')
+    ax.set_xticks(x)
+    ax.set_xticklabels(components, rotation=45)
     ax.legend()
-    
-    # Add value labels on the bars
-    for bars in [solid_bars, liquid_bars]:
-        for bar in bars:
-            height = bar.get_height()
-            if height > 0:  # Only label bars with non-zero height
-                ax.text(bar.get_x() + bar.get_width()/2., 
-                       bar.get_y() + height/2.,
-                       f'{height:.2f}',
-                       ha='center', va='center')
-    
     plt.tight_layout()
     st.pyplot(fig)
 
-with col2:
-    st.subheader("Volume Distribution")
-    
-    fig, ax = plt.subplots(figsize=(10, 6))
-    
-    # Create stacked bar chart for volumes
-    bottom_vol = np.zeros(3)
-    
-    # Plot solid volume
-    solid_bars = ax.bar(volume_data['Category'], volume_data['Solid'], 
-                       label='Solid', color='#ff9999')
-    
-    # Plot liquid volume
-    liquid_bars = ax.bar(volume_data['Category'], volume_data['Liquid'], 
-                        bottom=volume_data['Solid'], label='Liquid', 
-                        color='#99ccff')
-    
-    # Customize the plot
-    ax.set_ylabel('Volume (mL)')
-    ax.set_title('Volume Distribution Across Process Steps')
-    ax.legend()
-    
-    # Add value labels on the bars
-    for bars in [solid_bars, liquid_bars]:
-        for bar in bars:
-            height = bar.get_height()
-            if height > 0:  # Only label bars with non-zero height
-                ax.text(bar.get_x() + bar.get_width()/2., 
-                       bar.get_y() + height/2.,
-                       f'{height:.2f}',
-                       ha='center', va='center')
-    
-    plt.tight_layout()
-    st.pyplot(fig)
-
-# Component comparison visualization
-st.subheader("Component Concentration Comparison")
-
-fig, ax = plt.subplots(figsize=(10, 6))
-components = [drug_name, "Histidine", "Histidine HCl", "Sucrose", "PS80"]
-x = np.arange(len(components))
-width = 0.35
-
-ax.bar(x - width/2, [drug_conc, hist_conc, hist_hcl_conc, sucrose_conc, ps80_conc], 
-       width, label='Pre-Lyophilization', color='royalblue')
-ax.bar(x + width/2, [drug_conc_after, hist_conc_after, hist_hcl_conc_after, sucrose_conc_after, ps80_conc_after], 
-       width, label='Post-Reconstitution', color='darkorange')
-
-ax.set_ylabel('Concentration (mg/mL)')
-ax.set_xticks(x)
-ax.set_xticklabels(components, rotation=45)
-ax.legend()
-plt.tight_layout()
-st.pyplot(fig)
-
-# Methodology explanation
+# Always show methodology explanation
 with st.expander("Methodology and Calculations Explained"):
     st.markdown("""
     ### Reconstitution Volume Calculation Methodology
