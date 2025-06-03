@@ -47,48 +47,13 @@ col1, col2 = st.columns(2)
 with col1:
     st.subheader("Pre-Lyophilization Parameters")
     
-    # Drug and excipient inputs
-    st.markdown("##### Drug and Excipients")
+    # Drug inputs
+    st.markdown("##### Drug")
     drug_name = st.text_input("Drug Name", value="SARxxxx")
     drug_conc = st.number_input("Drug Concentration (mg/mL)", value=8.0, step=0.1)
     
-    # Dynamic excipients section
-    with st.expander("Excipients"):
-        st.button("+ Add Excipient", on_click=add_excipient)
-        
-        for i, excipient in enumerate(st.session_state.excipients):
-            col1, col2, col3 = st.columns([2, 2, 1])
-            
-            with col1:
-                selected_excipient = st.selectbox(
-                    "Select Excipient",
-                    AVAILABLE_EXCIPIENTS,
-                    key=f"excipient_select_{i}"
-                )
-                
-                if selected_excipient == "Custom excipient":
-                    custom_name = st.text_input("Enter excipient name", key=f"custom_name_{i}")
-                    st.session_state.excipients[i]['name'] = custom_name
-                else:
-                    st.session_state.excipients[i]['name'] = selected_excipient
-            
-            with col2:
-                concentration = st.number_input(
-                    "Concentration (mg/mL)",
-                    value=st.session_state.excipients[i]['concentration'],
-                    step=0.01,
-                    key=f"excipient_conc_{i}"
-                )
-                st.session_state.excipients[i]['concentration'] = concentration
-            
-            with col3:
-                st.write("")  # Add some spacing
-                st.write("")  # Add some spacing
-                if st.button("Remove", key=f"remove_{i}"):
-                    remove_excipient(i)
-                    st.experimental_rerun()
-    
     # Process parameters
+    st.markdown("##### Process Parameters")
     filling_volume = st.number_input("Filling Volume (mL)", value=8.0, step=0.1)
     density_pre_lyo = st.number_input("Density of Solution Prior to Lyophilization (mg/mL)", value=1030.0, step=1.0)
 
@@ -107,9 +72,48 @@ with col2:
     brim_fill_volume = vial_options[selected_vial]
     st.write(f"Brim Fill Volume: {brim_fill_volume} mL")
 
+# Separate section for excipients
+st.subheader("Excipients")
+excipients_col1, excipients_col2 = st.columns([1, 3])
+
+with excipients_col1:
+    st.button("+ Add Excipient", on_click=add_excipient)
+
+with excipients_col2:
+    for i, excipient in enumerate(st.session_state.excipients):
+        col1, col2, col3 = st.columns([2, 2, 1])
+        
+        with col1:
+            selected_excipient = st.selectbox(
+                "Select Excipient",
+                AVAILABLE_EXCIPIENTS,
+                key=f"excipient_select_{i}"
+            )
+            
+            if selected_excipient == "Custom excipient":
+                custom_name = st.text_input("Enter excipient name", key=f"custom_name_{i}")
+                st.session_state.excipients[i]['name'] = custom_name
+            else:
+                st.session_state.excipients[i]['name'] = selected_excipient
+        
+        with col2:
+            concentration = st.number_input(
+                "Concentration (mg/mL)",
+                value=st.session_state.excipients[i]['concentration'],
+                step=0.01,
+                key=f"excipient_conc_{i}"
+            )
+            st.session_state.excipients[i]['concentration'] = concentration
+        
+        with col3:
+            st.write("")  # Add some spacing
+            st.write("")  # Add some spacing
+            if st.button("Remove", key=f"remove_{i}"):
+                remove_excipient(i)
+                st.experimental_rerun()
+
 # Add a calculate button
-if st.button("Calculate Reconstitution Parameters", type="primary"):
-    st.session_state.calculate_clicked = True
+st.button("Calculate Reconstitution Parameters", type="primary", on_click=lambda: setattr(st.session_state, 'calculate_clicked', True))
 
 # Only show results if calculate button has been clicked
 if st.session_state.calculate_clicked:
