@@ -16,4 +16,3 @@ xlsxwriter
 PyPDF2
 openpyxl
 pycryptodome
-plotly == 5.13.1

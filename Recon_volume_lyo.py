@@ -2,8 +2,6 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-import plotly.graph_objects as go
-from plotly.subplots import make_subplots
 
 st.set_page_config(page_title="Lyophilized Drug Product Reconstitution Calculator", layout="wide")
 
@@ -118,76 +116,61 @@ recon_details = {
 recon_df = pd.DataFrame(recon_details)
 st.dataframe(recon_df)
 
-# Visualization
+# Visualizations
 st.header("Visualizations")
 
 tab1, tab2 = st.tabs(["Composition Comparison", "Reconstitution Diagram"])
 
 with tab1:
     # Create a bar chart comparing pre and post reconstitution concentrations
+    fig, ax = plt.subplots(figsize=(10, 6))
+    
     components = [drug_name, "Histidine", "Histidine HCl", "Sucrose", "PS80"]
-    pre_concs = [drug_conc, hist_conc, hist_hcl_conc, sucrose_conc, ps80_conc]
-    post_concs = [drug_conc_after, hist_conc_after, hist_hcl_conc_after, sucrose_conc_after, ps80_conc_after]
+    x = np.arange(len(components))
+    width = 0.35
     
-    fig = go.Figure()
+    ax.bar(x - width/2, [drug_conc, hist_conc, hist_hcl_conc, sucrose_conc, ps80_conc], 
+           width, label='Pre-Lyophilization', color='royalblue')
+    ax.bar(x + width/2, [drug_conc_after, hist_conc_after, hist_hcl_conc_after, sucrose_conc_after, ps80_conc_after], 
+           width, label='Post-Reconstitution', color='darkorange')
     
-    fig.add_trace(go.Bar(
-        x=components,
-        y=pre_concs,
-        name='Pre-Lyophilization',
-        marker_color='royalblue'
-    ))
+    ax.set_ylabel('Concentration (mg/mL)')
+    ax.set_title('Component Concentration Comparison')
+    ax.set_xticks(x)
+    ax.set_xticklabels(components, rotation=45)
+    ax.legend()
     
-    fig.add_trace(go.Bar(
-        x=components,
-        y=post_concs,
-        name='Post-Reconstitution',
-        marker_color='darkorange'
-    ))
-    
-    fig.update_layout(
-        title='Component Concentration Comparison',
-        xaxis_title='Component',
-        yaxis_title='Concentration (mg/mL)',
-        barmode='group',
-        height=500
-    )
-    
-    st.plotly_chart(fig, use_container_width=True)
+    plt.tight_layout()
+    st.pyplot(fig)
 
 with tab2:
-    # Create a visual representation of the reconstitution process
-    fig = make_subplots(rows=1, cols=3, 
-                        specs=[[{"type": "domain"}, {"type": "domain"}, {"type": "domain"}]],
-                        subplot_titles=("Pre-Lyophilization", "Lyophilized Cake", "Reconstituted Solution"))
+    # Create pie charts for the reconstitution process
+    fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(15, 5))
     
-    # Pre-lyophilization composition
-    fig.add_trace(go.Pie(
-        labels=["Solids", "WFI"],
-        values=[total_solid_conc, wfi_conc],
-        name="Pre-Lyophilization",
-        marker_colors=['#66b3ff', '#99ffcc']
-    ), 1, 1)
+    # Pre-lyophilization
+    ax1.pie([total_solid_conc, wfi_conc], labels=["Solids", "WFI"], 
+            colors=['#66b3ff', '#99ffcc'], autopct='%1.1f%%')
+    ax1.set_title("Pre-Lyophilization")
     
-    # Lyophilized cake (only solids)
-    fig.add_trace(go.Pie(
-        labels=[drug_name, "Histidine", "Histidine HCl", "Sucrose", "PS80"],
-        values=[drug_conc, hist_conc, hist_hcl_conc, sucrose_conc, ps80_conc],
-        name="Lyophilized Cake",
-        marker_colors=['#ff9999', '#ffcc99', '#ffff99', '#ccff99', '#99ccff']
-    ), 1, 2)
+    # Lyophilized cake
+    solid_components = [drug_conc, hist_conc, hist_hcl_conc, sucrose_conc, ps80_conc]
+    ax2.pie(solid_components, 
+            labels=[drug_name, "Histidine", "Histidine HCl", "Sucrose", "PS80"],
+            colors=['#ff9999', '#ffcc99', '#ffff99', '#ccff99', '#99ccff'],
+            autopct='%1.1f%%')
+    ax2.set_title("Lyophilized Cake")
     
     # Reconstituted solution
-    total_post_recon = sum(post_concs) + wfi_conc_after
-    fig.add_trace(go.Pie(
-        labels=[drug_name, "Histidine", "Histidine HCl", "Sucrose", "PS80", "WFI"],
-        values=[drug_conc_after, hist_conc_after, hist_hcl_conc_after, sucrose_conc_after, ps80_conc_after, wfi_conc_after],
-        name="Reconstituted Solution",
-        marker_colors=['#ff9999', '#ffcc99', '#ffff99', '#ccff99', '#99ccff', '#99ffcc']
-    ), 1, 3)
+    recon_components = [drug_conc_after, hist_conc_after, hist_hcl_conc_after, 
+                       sucrose_conc_after, ps80_conc_after, wfi_conc_after]
+    ax3.pie(recon_components,
+            labels=[drug_name, "Histidine", "Histidine HCl", "Sucrose", "PS80", "WFI"],
+            colors=['#ff9999', '#ffcc99', '#ffff99', '#ccff99', '#99ccff', '#99ffcc'],
+            autopct='%1.1f%%')
+    ax3.set_title("Reconstituted Solution")
     
-    fig.update_layout(height=500)
-    st.plotly_chart(fig, use_container_width=True)
+    plt.tight_layout()
+    st.pyplot(fig)
 
 # Add a section for notes and explanations
 with st.expander("Methodology and Calculations Explained"):
@@ -214,8 +197,13 @@ with st.expander("Methodology and Calculations Explained"):
 
 st.sidebar.header("About")
 st.sidebar.info("""
-This calculator helps determine the correct amount of diluent 
+This calculator helps pharmaceutical scientists determine the correct amount of diluent 
 needed for reconstitution of lyophilized drug products, accounting for solid content 
 displacement and density differences.
 """)
 
+st.sidebar.header("References")
+st.sidebar.markdown("""
+- USP <1> Injections and Implanted Drug Products
+- Ph. Eur. 5.1.1 Methods of Preparation of Sterile Products
+""")
