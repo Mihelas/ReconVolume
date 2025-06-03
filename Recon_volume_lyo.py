@@ -5,11 +5,10 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 import seaborn as sns
 
+# Set page config and style
 st.set_page_config(page_title="Lyophilized Drug Product Reconstitution Calculator", layout="wide")
-
 plt.style.use('seaborn')
 sns.set_palette("husl")
-
 
 # Initialize session states
 if 'calculate_clicked' not in st.session_state:
@@ -117,7 +116,8 @@ with excipients_col2:
                 st.experimental_rerun()
 
 # Add a calculate button
-st.button("Calculate Reconstitution Parameters", type="primary", on_click=lambda: setattr(st.session_state, 'calculate_clicked', True))
+st.button("Calculate Reconstitution Parameters", type="primary", 
+         on_click=lambda: setattr(st.session_state, 'calculate_clicked', True))
 
 # Only show results if calculate button has been clicked
 if st.session_state.calculate_clicked:
@@ -181,12 +181,21 @@ if st.session_state.calculate_clicked:
     st.dataframe(recon_df)
 
     # Visualizations
-    # In the visualization section:
-if st.session_state.calculate_clicked:
-    # ... (previous calculations remain the same)
-
-    # Visualizations
     st.header("Visualizations")
+
+    # Prepare data for mass visualization
+    mass_data = {
+        'Category': ['Liquide+Solid', 'Solid', 'Recon+Solid'],
+        'Solid': [total_solid_amount/1000, total_solid_amount/1000, total_solid_amount/1000],  # Converting to grams
+        'Liquid': [wfi_amount/1000, 0, diluent_mass_needed/1000]  # Converting to grams
+    }
+
+    # Prepare data for volume visualization
+    volume_data = {
+        'Category': ['Liquide+Solid', 'Solid', 'Recon+Solid'],
+        'Solid': [total_solid_amount/(density_pre_lyo), total_solid_amount/(density_pre_lyo), total_solid_amount/(density_post_recon)],
+        'Liquid': [wfi_amount/diluent_density, 0, diluent_volume_needed]
+    }
 
     # Create two columns for the graphs
     col1, col2 = st.columns(2)
@@ -262,8 +271,8 @@ if st.session_state.calculate_clicked:
         plt.tight_layout()
         st.pyplot(fig)
 
-    with col2:
-        st.subheader("Volume Distribution")
+        with col2:
+            st.subheader("Volume Distribution")
         
         fig = plt.figure(figsize=(10, 8))
         ax = fig.add_subplot(111, projection='3d')
