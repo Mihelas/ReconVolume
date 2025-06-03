@@ -264,9 +264,7 @@ if st.session_state.calculate_clicked:
         ax.set_title('Volumes')
         ax.set_xticks(x)
         ax.set_xticklabels(categories)
-        legend = ax.legend(loc='upper right', fancybox=True, shadow=True, framealpha=1)
-        legend.get_frame().set_facecolor('white')
-        legend.get_frame().set_edgecolor('black')
+        ax.legend(loc='upper right', fancybox=True, shadow=True, framealpha=1, facecolor='white')
         
         # Add value labels on the bars
         for i, category in enumerate(categories):
