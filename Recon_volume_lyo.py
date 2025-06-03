@@ -7,16 +7,39 @@ st.set_page_config(page_title="Lyophilized Drug Product Reconstitution Calculato
 
 plt.style.use('seaborn')  # Using seaborn style for better-looking plots
 
+# Initialize session states
+if 'calculate_clicked' not in st.session_state:
+    st.session_state.calculate_clicked = False
+
+if 'excipients' not in st.session_state:
+    st.session_state.excipients = []
+
+# Define available excipients
+AVAILABLE_EXCIPIENTS = [
+    "Histidine",
+    "Histidine HCl",
+    "Sucrose",
+    "PS80",
+    "Custom excipient"
+]
+
+# Create a function to add new excipient
+def add_excipient():
+    st.session_state.excipients.append({
+        'name': '',
+        'concentration': 0.0
+    })
+
+# Create a function to remove excipient
+def remove_excipient(index):
+    st.session_state.excipients.pop(index)
+
 st.title("Lyophilized Drug Product Reconstitution Calculator")
 
 st.markdown("""
 This application calculates the required diluent volume for reconstitution of lyophilized drug products,
 accounting for solid content displacement and density corrections.
 """)
-
-# Initialize session state to track if calculation has been performed
-if 'calculate_clicked' not in st.session_state:
-    st.session_state.calculate_clicked = False
 
 # Create two columns for input parameters
 col1, col2 = st.columns(2)
@@ -29,12 +52,41 @@ with col1:
     drug_name = st.text_input("Drug Name", value="SARxxxx")
     drug_conc = st.number_input("Drug Concentration (mg/mL)", value=8.0, step=0.1)
     
-    # Create expandable section for excipients
+    # Dynamic excipients section
     with st.expander("Excipients"):
-        hist_conc = st.number_input("Histidine Concentration (mg/mL)", value=1.15, step=0.01)
-        hist_hcl_conc = st.number_input("Histidine HCl Concentration (mg/mL)", value=0.54, step=0.01)
-        sucrose_conc = st.number_input("Sucrose Concentration (mg/mL)", value=80.0, step=0.1)
-        ps80_conc = st.number_input("PS80 Concentration (mg/mL)", value=0.5, step=0.01)
+        st.button("+ Add Excipient", on_click=add_excipient)
+        
+        for i, excipient in enumerate(st.session_state.excipients):
+            col1, col2, col3 = st.columns([2, 2, 1])
+            
+            with col1:
+                selected_excipient = st.selectbox(
+                    "Select Excipient",
+                    AVAILABLE_EXCIPIENTS,
+                    key=f"excipient_select_{i}"
+                )
+                
+                if selected_excipient == "Custom excipient":
+                    custom_name = st.text_input("Enter excipient name", key=f"custom_name_{i}")
+                    st.session_state.excipients[i]['name'] = custom_name
+                else:
+                    st.session_state.excipients[i]['name'] = selected_excipient
+            
+            with col2:
+                concentration = st.number_input(
+                    "Concentration (mg/mL)",
+                    value=st.session_state.excipients[i]['concentration'],
+                    step=0.01,
+                    key=f"excipient_conc_{i}"
+                )
+                st.session_state.excipients[i]['concentration'] = concentration
+            
+            with col3:
+                st.write("")  # Add some spacing
+                st.write("")  # Add some spacing
+                if st.button("Remove", key=f"remove_{i}"):
+                    remove_excipient(i)
+                    st.experimental_rerun()
     
     # Process parameters
     filling_volume = st.number_input("Filling Volume (mL)", value=8.0, step=0.1)
@@ -61,16 +113,19 @@ if st.button("Calculate Reconstitution Parameters", type="primary"):
 
 # Only show results if calculate button has been clicked
 if st.session_state.calculate_clicked:
-    # Calculations
-    total_solid_conc = drug_conc + hist_conc + hist_hcl_conc + sucrose_conc + ps80_conc
+    # Calculate total solid content including dynamic excipients
+    excipient_conc_sum = sum(exc['concentration'] for exc in st.session_state.excipients)
+    total_solid_conc = drug_conc + excipient_conc_sum
     wfi_conc = density_pre_lyo - total_solid_conc
 
     # Calculate per vial amounts
     drug_amount = drug_conc * filling_volume
-    hist_amount = hist_conc * filling_volume
-    hist_hcl_amount = hist_hcl_conc * filling_volume
-    sucrose_amount = sucrose_conc * filling_volume
-    ps80_amount = ps80_conc * filling_volume
+    
+    # Create lists for excipient names and calculations
+    excipient_names = [exc['name'] for exc in st.session_state.excipients]
+    excipient_concentrations = [exc['concentration'] for exc in st.session_state.excipients]
+    excipient_amounts = [conc * filling_volume for conc in excipient_concentrations]
+    
     total_solid_amount = total_solid_conc * filling_volume
     wfi_amount = wfi_conc * filling_volume
 
@@ -81,10 +136,7 @@ if st.session_state.calculate_clicked:
 
     # Calculate concentrations after reconstitution
     drug_conc_after = drug_amount / recon_volume
-    hist_conc_after = hist_amount / recon_volume
-    hist_hcl_conc_after = hist_hcl_amount / recon_volume
-    sucrose_conc_after = sucrose_amount / recon_volume
-    ps80_conc_after = ps80_amount / recon_volume
+    excipient_conc_after = [amount / recon_volume for amount in excipient_amounts]
     wfi_conc_after = (wfi_amount + diluent_mass_needed) / recon_volume
 
     # Display results
@@ -95,9 +147,9 @@ if st.session_state.calculate_clicked:
     with col1:
         st.subheader("Pre-Lyophilization Composition")
         pre_lyo_data = {
-            "Component": [drug_name, "Histidine", "Histidine HCl", "Sucrose", "PS80", "Total Solids", "WFI"],
-            "Concentration (mg/mL)": [drug_conc, hist_conc, hist_hcl_conc, sucrose_conc, ps80_conc, total_solid_conc, wfi_conc],
-            "Amount per Vial (mg)": [drug_amount, hist_amount, hist_hcl_amount, sucrose_amount, ps80_amount, total_solid_amount, wfi_amount]
+            "Component": [drug_name] + excipient_names + ["Total Solids", "WFI"],
+            "Concentration (mg/mL)": [drug_conc] + excipient_concentrations + [total_solid_conc, wfi_conc],
+            "Amount per Vial (mg)": [drug_amount] + excipient_amounts + [total_solid_amount, wfi_amount]
         }
         pre_lyo_df = pd.DataFrame(pre_lyo_data)
         st.dataframe(pre_lyo_df)
@@ -105,8 +157,8 @@ if st.session_state.calculate_clicked:
     with col2:
         st.subheader("Post-Reconstitution Composition")
         post_recon_data = {
-            "Component": [drug_name, "Histidine", "Histidine HCl", "Sucrose", "PS80", "WFI"],
-            "Concentration (mg/mL)": [drug_conc_after, hist_conc_after, hist_hcl_conc_after, sucrose_conc_after, ps80_conc_after, wfi_conc_after]
+            "Component": [drug_name] + excipient_names + ["WFI"],
+            "Concentration (mg/mL)": [drug_conc_after] + excipient_conc_after + [wfi_conc_after]
         }
         post_recon_df = pd.DataFrame(post_recon_data)
         st.dataframe(post_recon_df)
@@ -213,22 +265,29 @@ if st.session_state.calculate_clicked:
     # Component comparison visualization
     st.subheader("Component Concentration Comparison")
 
-    fig, ax = plt.subplots(figsize=(10, 6))
-    components = [drug_name, "Histidine", "Histidine HCl", "Sucrose", "PS80"]
-    x = np.arange(len(components))
-    width = 0.35
+    # Only create the comparison chart if there are components to compare
+    components = [drug_name] + excipient_names
+    pre_concentrations = [drug_conc] + excipient_concentrations
+    post_concentrations = [drug_conc_after] + excipient_conc_after
+    
+    if components:
+        fig, ax = plt.subplots(figsize=(10, 6))
+        x = np.arange(len(components))
+        width = 0.35
 
-    ax.bar(x - width/2, [drug_conc, hist_conc, hist_hcl_conc, sucrose_conc, ps80_conc], 
-           width, label='Pre-Lyophilization', color='royalblue')
-    ax.bar(x + width/2, [drug_conc_after, hist_conc_after, hist_hcl_conc_after, sucrose_conc_after, ps80_conc_after], 
-           width, label='Post-Reconstitution', color='darkorange')
+        ax.bar(x - width/2, pre_concentrations, 
+               width, label='Pre-Lyophilization', color='royalblue')
+        ax.bar(x + width/2, post_concentrations, 
+               width, label='Post-Reconstitution', color='darkorange')
 
-    ax.set_ylabel('Concentration (mg/mL)')
-    ax.set_xticks(x)
-    ax.set_xticklabels(components, rotation=45)
-    ax.legend()
-    plt.tight_layout()
-    st.pyplot(fig)
+        ax.set_ylabel('Concentration (mg/mL)')
+        ax.set_xticks(x)
+        ax.set_xticklabels(components, rotation=45)
+        ax.legend()
+        plt.tight_layout()
+        st.pyplot(fig)
+    else:
+        st.write("No components to compare.")
 
 # Always show methodology explanation
 with st.expander("Methodology and Calculations Explained"):
