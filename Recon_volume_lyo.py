@@ -214,13 +214,6 @@ if st.session_state.calculate_clicked:
         liquid_bars = ax.bar(x, mass_data['Liquid'], width, bottom=mass_data['Solid'], 
                              label='Liquid', color='#99ccff')
         
-        # Customize the plot
-        ax.set_ylabel('Mass (g)')
-        ax.set_title('Masses')
-        ax.set_xticks(x)
-        ax.set_xticklabels(categories)
-        ax.legend(loc='upper right', fancybox=True, shadow=True, framealpha=1, facecolor='white')
-        
         # Add value labels on the bars
         for i, category in enumerate(categories):
             solid_height = mass_data['Solid'][i]
@@ -240,6 +233,13 @@ if st.session_state.calculate_clicked:
             # Total label on top
             ax.text(i, total_height + 0.1, f'{total_height:.1f}', 
                     ha='center', va='bottom', color='black')
+            
+            # Customize the plot
+        ax.set_ylabel('Mass (g)')
+        ax.set_title('Masses')
+        ax.set_xticks(x)
+        ax.set_xticklabels(categories)
+        ax.legend(loc='upper right', fancybox=True, shadow=True, framealpha=1, facecolor='white')
         
         plt.tight_layout()
         st.pyplot(fig)
