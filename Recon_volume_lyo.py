@@ -219,7 +219,7 @@ if st.session_state.calculate_clicked:
         ax.set_title('Masses')
         ax.set_xticks(x)
         ax.set_xticklabels(categories)
-        ax.legend(loc='upper right', fancybox=True, shadow=True, framealpha=1)
+        ax.legend(loc='upper right', fancybox=True, shadow=True, framealpha=1, facecolor='white')
         
         # Add value labels on the bars
         for i, category in enumerate(categories):
@@ -312,7 +312,7 @@ if st.session_state.calculate_clicked:
         ax.set_title('Component Concentration Comparison')
         ax.set_xticks(x)
         ax.set_xticklabels(components, rotation=45)
-        ax.legend(loc='upper right', fancybox=True, shadow=True, framealpha=1)
+        ax.legend(loc='upper right', fancybox=True, shadow=True, framealpha=1, facecolor='white')
         
         # Add value labels
         for bars in [pre_bars, post_bars]:
