@@ -3,7 +3,7 @@
   "locale": "English_United States.1252",
   "metadata": {
     "appmode": "python-streamlit",
-    "entrypoint": "Recon_Lyo_Volume"
+    "entrypoint": "Recon_volume_lyo"
   },
   "python": {
     "version": "3.8.6",
@@ -17,7 +17,7 @@
     "requirements.txt": {
       "checksum": "876940e8d385532ade629ad253b96e0d"
     },
-    "Recon_Lyo_Volume.py": {
+    "Recon_volume_lyo.py": {
       "checksum": "482fb39bc2425cee93347a4b1a84789e"
     }
   }
