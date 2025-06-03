@@ -2,10 +2,14 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
+import seaborn as sns
 
 st.set_page_config(page_title="Lyophilized Drug Product Reconstitution Calculator", layout="wide")
 
-plt.style.use('seaborn')  # Using seaborn style for better-looking plots
+plt.style.use('seaborn')
+sns.set_palette("husl")
+
 
 # Initialize session states
 if 'calculate_clicked' not in st.session_state:
@@ -177,21 +181,12 @@ if st.session_state.calculate_clicked:
     st.dataframe(recon_df)
 
     # Visualizations
+    # In the visualization section:
+if st.session_state.calculate_clicked:
+    # ... (previous calculations remain the same)
+
+    # Visualizations
     st.header("Visualizations")
-
-    # Prepare data for mass visualization
-    mass_data = {
-        'Category': ['Liquide+Solid', 'Solid', 'Recon+Solid'],
-        'Solid': [total_solid_amount/1000, total_solid_amount/1000, total_solid_amount/1000],  # Converting to grams
-        'Liquid': [wfi_amount/1000, 0, diluent_mass_needed/1000]  # Converting to grams
-    }
-
-    # Prepare data for volume visualization
-    volume_data = {
-        'Category': ['Liquide+Solid', 'Solid', 'Recon+Solid'],
-        'Solid': [total_solid_amount/(density_pre_lyo), total_solid_amount/(density_pre_lyo), total_solid_amount/(density_post_recon)],
-        'Liquid': [wfi_amount/diluent_density, 0, diluent_volume_needed]
-    }
 
     # Create two columns for the graphs
     col1, col2 = st.columns(2)
@@ -199,70 +194,142 @@ if st.session_state.calculate_clicked:
     with col1:
         st.subheader("Mass Distribution")
         
-        fig, ax = plt.subplots(figsize=(10, 6))
+        fig = plt.figure(figsize=(10, 8))
+        ax = fig.add_subplot(111, projection='3d')
         
-        # Create stacked bar chart for masses
-        bottom_mass = np.zeros(3)
+        # Define positions
+        xpos = np.array([0, 1, 2])
+        ypos = np.array([0, 0, 0])
+        zpos = np.zeros(3)
         
-        # Plot solid mass
-        solid_bars = ax.bar(mass_data['Category'], mass_data['Solid'], 
-                           label='Solid', color='#ff9999')
+        # Define dimensions
+        dx = np.ones(3) * 0.5
+        dy = np.ones(3) * 0.5
         
-        # Plot liquid mass
-        liquid_bars = ax.bar(mass_data['Category'], mass_data['Liquid'], 
-                            bottom=mass_data['Solid'], label='Liquid', 
-                            color='#99ccff')
+        # Create 3D bars for solid mass
+        solid_heights = np.array(mass_data['Solid'])
+        liquid_heights = np.array(mass_data['Liquid'])
+        
+        # Plot solid bars
+        solid_bars = ax.bar3d(xpos, ypos, zpos, dx, dy, solid_heights, 
+                             color='#ff9999', alpha=0.8, shade=True)
+        
+        # Plot liquid bars on top of solid bars
+        liquid_bars = ax.bar3d(xpos, ypos, solid_heights, dx, dy, liquid_heights, 
+                              color='#99ccff', alpha=0.8, shade=True)
         
         # Customize the plot
-        ax.set_ylabel('Mass (g)')
-        ax.set_title('Mass Distribution Across Process Steps')
-        ax.legend()
+        ax.set_title('Mass Distribution Across Process Steps', pad=20)
+        ax.set_xlabel('Process Step')
+        ax.set_ylabel('')
+        ax.set_zlabel('Mass (g)')
         
-        # Add value labels on the bars
-        for bars in [solid_bars, liquid_bars]:
-            for bar in bars:
-                height = bar.get_height()
-                if height > 0:  # Only label bars with non-zero height
-                    ax.text(bar.get_x() + bar.get_width()/2., 
-                           bar.get_y() + height/2.,
-                           f'{height:.2f}',
-                           ha='center', va='center')
+        # Set x-axis labels
+        ax.set_xticks(xpos + dx/2)
+        ax.set_xticklabels(mass_data['Category'])
         
+        # Add legend with fancy box
+        legend = ax.legend(['Solid', 'Liquid'], 
+                          bbox_to_anchor=(1.15, 0.5),
+                          loc='center left',
+                          bbox_transform=ax.transAxes,
+                          fancybox=True, 
+                          shadow=True,
+                          framealpha=1,
+                          edgecolor='black')
+        legend.get_frame().set_facecolor('white')
+        
+        # Add value labels
+        for i in range(len(xpos)):
+            solid_height = solid_heights[i]
+            liquid_height = liquid_heights[i]
+            
+            # Label for solid portion
+            ax.text(xpos[i] + dx[i]/2, ypos[i], solid_height/2, 
+                   f'{solid_height:.2f}',
+                   horizontalalignment='center',
+                   verticalalignment='center')
+            
+            # Label for liquid portion (if present)
+            if liquid_height > 0:
+                ax.text(xpos[i] + dx[i]/2, ypos[i], solid_height + liquid_height/2,
+                       f'{liquid_height:.2f}',
+                       horizontalalignment='center',
+                       verticalalignment='center')
+        
+        # Adjust view angle for better visualization
+        ax.view_init(elev=20, azim=45)
         plt.tight_layout()
         st.pyplot(fig)
 
     with col2:
         st.subheader("Volume Distribution")
         
-        fig, ax = plt.subplots(figsize=(10, 6))
+        fig = plt.figure(figsize=(10, 8))
+        ax = fig.add_subplot(111, projection='3d')
         
-        # Create stacked bar chart for volumes
-        bottom_vol = np.zeros(3)
+        # Define positions
+        xpos = np.array([0, 1, 2])
+        ypos = np.array([0, 0, 0])
+        zpos = np.zeros(3)
         
-        # Plot solid volume
-        solid_bars = ax.bar(volume_data['Category'], volume_data['Solid'], 
-                           label='Solid', color='#ff9999')
+        # Define dimensions
+        dx = np.ones(3) * 0.5
+        dy = np.ones(3) * 0.5
         
-        # Plot liquid volume
-        liquid_bars = ax.bar(volume_data['Category'], volume_data['Liquid'], 
-                            bottom=volume_data['Solid'], label='Liquid', 
-                            color='#99ccff')
+        # Create 3D bars for volumes
+        solid_heights = np.array(volume_data['Solid'])
+        liquid_heights = np.array(volume_data['Liquid'])
+        
+        # Plot solid bars
+        solid_bars = ax.bar3d(xpos, ypos, zpos, dx, dy, solid_heights, 
+                             color='#ff9999', alpha=0.8, shade=True)
+        
+        # Plot liquid bars on top of solid bars
+        liquid_bars = ax.bar3d(xpos, ypos, solid_heights, dx, dy, liquid_heights, 
+                              color='#99ccff', alpha=0.8, shade=True)
         
         # Customize the plot
-        ax.set_ylabel('Volume (mL)')
-        ax.set_title('Volume Distribution Across Process Steps')
-        ax.legend()
+        ax.set_title('Volume Distribution Across Process Steps', pad=20)
+        ax.set_xlabel('Process Step')
+        ax.set_ylabel('')
+        ax.set_zlabel('Volume (mL)')
         
-        # Add value labels on the bars
-        for bars in [solid_bars, liquid_bars]:
-            for bar in bars:
-                height = bar.get_height()
-                if height > 0:  # Only label bars with non-zero height
-                    ax.text(bar.get_x() + bar.get_width()/2., 
-                           bar.get_y() + height/2.,
-                           f'{height:.2f}',
-                           ha='center', va='center')
+        # Set x-axis labels
+        ax.set_xticks(xpos + dx/2)
+        ax.set_xticklabels(volume_data['Category'])
         
+        # Add legend with fancy box
+        legend = ax.legend(['Solid', 'Liquid'], 
+                          bbox_to_anchor=(1.15, 0.5),
+                          loc='center left',
+                          bbox_transform=ax.transAxes,
+                          fancybox=True, 
+                          shadow=True,
+                          framealpha=1,
+                          edgecolor='black')
+        legend.get_frame().set_facecolor('white')
+        
+        # Add value labels
+        for i in range(len(xpos)):
+            solid_height = solid_heights[i]
+            liquid_height = liquid_heights[i]
+            
+            # Label for solid portion
+            ax.text(xpos[i] + dx[i]/2, ypos[i], solid_height/2, 
+                   f'{solid_height:.2f}',
+                   horizontalalignment='center',
+                   verticalalignment='center')
+            
+            # Label for liquid portion (if present)
+            if liquid_height > 0:
+                ax.text(xpos[i] + dx[i]/2, ypos[i], solid_height + liquid_height/2,
+                       f'{liquid_height:.2f}',
+                       horizontalalignment='center',
+                       verticalalignment='center')
+        
+        # Adjust view angle for better visualization
+        ax.view_init(elev=20, azim=45)
         plt.tight_layout()
         st.pyplot(fig)
 
@@ -275,19 +342,65 @@ if st.session_state.calculate_clicked:
     post_concentrations = [drug_conc_after] + excipient_conc_after
     
     if components:
-        fig, ax = plt.subplots(figsize=(10, 6))
-        x = np.arange(len(components))
-        width = 0.35
-
-        ax.bar(x - width/2, pre_concentrations, 
-               width, label='Pre-Lyophilization', color='royalblue')
-        ax.bar(x + width/2, post_concentrations, 
-               width, label='Post-Reconstitution', color='darkorange')
-
-        ax.set_ylabel('Concentration (mg/mL)')
-        ax.set_xticks(x)
+        fig = plt.figure(figsize=(12, 6))
+        ax = fig.add_subplot(111, projection='3d')
+        
+        # Define positions
+        xpos = np.arange(len(components))
+        ypos = np.array([0, 1])  # Two positions for pre and post
+        zpos = 0
+        
+        # Define dimensions
+        dx = 0.3
+        dy = 0.3
+        
+        # Create meshgrid for positions
+        xpos_mesh, ypos_mesh = np.meshgrid(xpos, ypos)
+        xpos_mesh = xpos_mesh.flatten()
+        ypos_mesh = ypos_mesh.flatten()
+        
+        # Create heights array
+        heights = np.array(pre_concentrations + post_concentrations)
+        
+        # Create colors array
+        colors = ['royalblue' if y == 0 else 'darkorange' for y in ypos_mesh]
+        
+        # Plot 3D bars
+        bars = ax.bar3d(xpos_mesh, ypos_mesh, np.zeros_like(heights),
+                       dx, dy, heights, color=colors, alpha=0.8, shade=True)
+        
+        # Customize the plot
+        ax.set_title('Component Concentration Comparison', pad=20)
+        ax.set_xlabel('Components')
+        ax.set_ylabel('Stage')
+        ax.set_zlabel('Concentration (mg/mL)')
+        
+        # Set axis labels
+        ax.set_xticks(xpos)
         ax.set_xticklabels(components, rotation=45)
-        ax.legend()
+        ax.set_yticks([0, 1])
+        ax.set_yticklabels(['Pre-Lyophilization', 'Post-Reconstitution'])
+        
+        # Add legend with fancy box
+        legend = ax.legend(['Pre-Lyophilization', 'Post-Reconstitution'],
+                          bbox_to_anchor=(1.15, 0.5),
+                          loc='center left',
+                          bbox_transform=ax.transAxes,
+                          fancybox=True, 
+                          shadow=True,
+                          framealpha=1,
+                          edgecolor='black')
+        legend.get_frame().set_facecolor('white')
+        
+        # Add value labels
+        for i, height in enumerate(heights):
+            ax.text(xpos_mesh[i], ypos_mesh[i], height,
+                   f'{height:.2f}',
+                   horizontalalignment='center',
+                   verticalalignment='bottom')
+        
+        # Adjust view angle for better visualization
+        ax.view_init(elev=20, azim=45)
         plt.tight_layout()
         st.pyplot(fig)
     else:
