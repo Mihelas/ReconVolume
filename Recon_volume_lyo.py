@@ -113,54 +113,112 @@ st.dataframe(recon_df)
 # Visualizations
 st.header("Visualizations")
 
-tab1, tab2 = st.tabs(["Composition Comparison", "Process Visualization"])
+# Prepare data for mass visualization
+mass_data = {
+    'Category': ['Liquide+Solid', 'Solid', 'Recon+Solid'],
+    'Solid': [total_solid_amount/1000, total_solid_amount/1000, total_solid_amount/1000],  # Converting to grams
+    'Liquid': [wfi_amount/1000, 0, diluent_mass_needed/1000]  # Converting to grams
+}
 
-with tab1:
+# Prepare data for volume visualization
+volume_data = {
+    'Category': ['Liquide+Solid', 'Solid', 'Recon+Solid'],
+    'Solid': [total_solid_amount/(density_pre_lyo), total_solid_amount/(density_pre_lyo), total_solid_amount/(density_post_recon)],
+    'Liquid': [wfi_amount/diluent_density, 0, diluent_volume_needed]
+}
+
+# Create two columns for the graphs
+col1, col2 = st.columns(2)
+
+with col1:
+    st.subheader("Mass Distribution")
+    
     fig, ax = plt.subplots(figsize=(10, 6))
-    components = [drug_name, "Histidine", "Histidine HCl", "Sucrose", "PS80"]
-    x = np.arange(len(components))
-    width = 0.35
     
-    ax.bar(x - width/2, [drug_conc, hist_conc, hist_hcl_conc, sucrose_conc, ps80_conc], 
-           width, label='Pre-Lyophilization', color='royalblue')
-    ax.bar(x + width/2, [drug_conc_after, hist_conc_after, hist_hcl_conc_after, sucrose_conc_after, ps80_conc_after], 
-           width, label='Post-Reconstitution', color='darkorange')
+    # Create stacked bar chart for masses
+    bottom_mass = np.zeros(3)
     
-    ax.set_ylabel('Concentration (mg/mL)')
-    ax.set_title('Component Concentration Comparison')
-    ax.set_xticks(x)
-    ax.set_xticklabels(components, rotation=45)
+    # Plot solid mass
+    solid_bars = ax.bar(mass_data['Category'], mass_data['Solid'], 
+                       label='Solid', color='#ff9999')
+    
+    # Plot liquid mass
+    liquid_bars = ax.bar(mass_data['Category'], mass_data['Liquid'], 
+                        bottom=mass_data['Solid'], label='Liquid', 
+                        color='#99ccff')
+    
+    # Customize the plot
+    ax.set_ylabel('Mass (g)')
+    ax.set_title('Mass Distribution Across Process Steps')
     ax.legend()
+    
+    # Add value labels on the bars
+    for bars in [solid_bars, liquid_bars]:
+        for bar in bars:
+            height = bar.get_height()
+            if height > 0:  # Only label bars with non-zero height
+                ax.text(bar.get_x() + bar.get_width()/2., 
+                       bar.get_y() + height/2.,
+                       f'{height:.2f}',
+                       ha='center', va='center')
+    
     plt.tight_layout()
     st.pyplot(fig)
 
-with tab2:
-    fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(15, 5))
+with col2:
+    st.subheader("Volume Distribution")
     
-    # Pre-lyophilization composition
-    ax1.pie([total_solid_conc, wfi_conc], labels=["Solids", "WFI"], 
-            colors=['#66b3ff', '#99ffcc'], autopct='%1.1f%%')
-    ax1.set_title("Pre-Lyophilization")
+    fig, ax = plt.subplots(figsize=(10, 6))
     
-    # Lyophilized cake composition
-    solid_components = [drug_conc, hist_conc, hist_hcl_conc, sucrose_conc, ps80_conc]
-    ax2.pie(solid_components, 
-            labels=[drug_name, "Histidine", "Histidine HCl", "Sucrose", "PS80"],
-            colors=['#ff9999', '#ffcc99', '#ffff99', '#ccff99', '#99ccff'],
-            autopct='%1.1f%%')
-    ax2.set_title("Lyophilized Cake")
+    # Create stacked bar chart for volumes
+    bottom_vol = np.zeros(3)
     
-    # Reconstituted solution composition
-    recon_components = [drug_conc_after, hist_conc_after, hist_hcl_conc_after, 
-                       sucrose_conc_after, ps80_conc_after, wfi_conc_after]
-    ax3.pie(recon_components,
-            labels=[drug_name, "Histidine", "Histidine HCl", "Sucrose", "PS80", "WFI"],
-            colors=['#ff9999', '#ffcc99', '#ffff99', '#ccff99', '#99ccff', '#99ffcc'],
-            autopct='%1.1f%%')
-    ax3.set_title("Reconstituted Solution")
+    # Plot solid volume
+    solid_bars = ax.bar(volume_data['Category'], volume_data['Solid'], 
+                       label='Solid', color='#ff9999')
+    
+    # Plot liquid volume
+    liquid_bars = ax.bar(volume_data['Category'], volume_data['Liquid'], 
+                        bottom=volume_data['Solid'], label='Liquid', 
+                        color='#99ccff')
+    
+    # Customize the plot
+    ax.set_ylabel('Volume (mL)')
+    ax.set_title('Volume Distribution Across Process Steps')
+    ax.legend()
+    
+    # Add value labels on the bars
+    for bars in [solid_bars, liquid_bars]:
+        for bar in bars:
+            height = bar.get_height()
+            if height > 0:  # Only label bars with non-zero height
+                ax.text(bar.get_x() + bar.get_width()/2., 
+                       bar.get_y() + height/2.,
+                       f'{height:.2f}',
+                       ha='center', va='center')
     
     plt.tight_layout()
     st.pyplot(fig)
+
+# Component comparison visualization
+st.subheader("Component Concentration Comparison")
+
+fig, ax = plt.subplots(figsize=(10, 6))
+components = [drug_name, "Histidine", "Histidine HCl", "Sucrose", "PS80"]
+x = np.arange(len(components))
+width = 0.35
+
+ax.bar(x - width/2, [drug_conc, hist_conc, hist_hcl_conc, sucrose_conc, ps80_conc], 
+       width, label='Pre-Lyophilization', color='royalblue')
+ax.bar(x + width/2, [drug_conc_after, hist_conc_after, hist_hcl_conc_after, sucrose_conc_after, ps80_conc_after], 
+       width, label='Post-Reconstitution', color='darkorange')
+
+ax.set_ylabel('Concentration (mg/mL)')
+ax.set_xticks(x)
+ax.set_xticklabels(components, rotation=45)
+ax.legend()
+plt.tight_layout()
+st.pyplot(fig)
 
 # Methodology explanation
 with st.expander("Methodology and Calculations Explained"):
