@@ -6,7 +6,7 @@ import seaborn as sns
 
 # Set page config and style
 st.set_page_config(page_title="Lyophilized Drug Product Reconstitution Calculator", layout="wide")
-plt.style.use('seaborn')
+plt.style.use('seaborn-whitegrid')
 sns.set_palette("husl")
 
 # Initialize session states
