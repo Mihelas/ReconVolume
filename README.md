@@ -65,3 +65,56 @@ This Streamlit application calculates the required diluent volume for reconstitu
   * Liquid+Solid
   * Solid
   * Recon+Solid
+
+## Excel Export Format
+
+The downloaded Excel file (`lyophilization_calculation_YYYYMMDD_HHMMSS.xlsx`) contains the following sheets:
+
+1. **Pre-Lyophilization**
+   - Complete composition table
+   - Components, concentrations, and amounts per vial
+
+2. **Post-Reconstitution**
+   - Final composition table
+   - Components and their final concentrations
+
+3. **Reconstitution Details**
+   - Key calculation parameters
+   - Final volumes and masses
+
+4. **Component Comparison**
+   - Side-by-side comparison of concentrations
+   - Pre-lyophilization vs post-reconstitution values
+
+5. **Visualizations**
+   - Mass distribution chart
+   - Volume distribution chart
+   - Component concentration comparison chart
+   - All charts include data labels and legends
+
+## Calculations and Methodology
+
+1. **Pre-Lyophilization Stage**
+   - Total solid content calculation
+   - Initial mass and volume calculations
+
+2. **Mass Balance Principle**
+   - Conservation of solid content
+   - Per vial calculations
+
+3. **Reconstitution Calculations**
+   - Target volume considerations
+   - Density corrections
+   - Diluent volume determination
+
+4. **Volume Displacement**
+   - Solid content displacement effects
+   - Final volume adjustments
+
+## Support
+
+For technical support or scientific questions, please contact Nicholas Michelarakis.
+
+## Version History
+v1.0 (June 2025): Initial release with core calculation features and Excel export functionality
+
