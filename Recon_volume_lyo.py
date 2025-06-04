@@ -20,10 +20,20 @@ if 'excipients' not in st.session_state:
 
 # Define available excipients
 AVAILABLE_EXCIPIENTS = [
-    "Histidine",
-    "Histidine HCl",
+    "L-Arginine monohydrochloride",
+    "L-Histidine",
+    "L-Histidine monohydrochloride monohydrate",
+    "D-Mannitol",
+    "Disodium hydrogen phosphate heptahydrate",
+    "Sodium chloride",
+    "Sodium chloride Emprove Expert Quality",
+    "Sodium dihydrogen phosphate dihydrate",
+    "Sodium hydroxide",
+    "Polysorbate 20",
+    "Poloxamer 188",
+    "Polysorbate 80 (super refined)",
+    "Hydrochloric acid 1N",
     "Sucrose",
-    "PS80",
     "Custom excipient"
 ]
 
