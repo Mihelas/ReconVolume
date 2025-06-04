@@ -312,7 +312,7 @@ if st.session_state.calculate_clicked:
         ax.set_title('Component Concentration Comparison')
         ax.set_xticks(x)
         ax.set_xticklabels(components, rotation=45)
-        ax.legend(loc='best', fancybox=True, shadow=True, facecolor='white')
+        ax.legend(loc='best', frameon = True, fancybox=True, shadow=True, facecolor='white')
         
         # Add value labels
         for bars in [pre_bars, post_bars]:
