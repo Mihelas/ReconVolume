@@ -231,14 +231,14 @@ if st.session_state.calculate_clicked:
 
     # Prepare data for mass visualization
     mass_data = {
-        'Category': ['Liquide+Solid', 'Solid', 'Recon+Solid'],
+        'Category': ['Liquid+Solid', 'Solid', 'Recon+Solid'],
         'Solid': [total_solid_amount/1000, total_solid_amount/1000, total_solid_amount/1000],  # Converting to grams
         'Liquid': [wfi_amount/1000, 0, diluent_mass_needed/1000]  # Converting to grams
     }
 
     # Prepare data for volume visualization
     volume_data = {
-        'Category': ['Liquide+Solid', 'Solid', 'Recon+Solid'],
+        'Category': ['Liquid+Solid', 'Solid', 'Recon+Solid'],
         'Solid': [total_solid_amount/(density_pre_lyo), total_solid_amount/(density_pre_lyo), total_solid_amount/(density_post_recon)],
         'Liquid': [wfi_amount/diluent_density, 0, diluent_volume_needed]
     }
