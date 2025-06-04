@@ -3,6 +3,8 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
+from io import BytesIO
+from datetime import datetime
 
 # Set page config and style
 st.set_page_config(page_title="Lyophilized Drug Product Reconstitution Calculator", layout="wide")
@@ -35,6 +37,51 @@ def add_excipient():
 # Create a function to remove excipient
 def remove_excipient(index):
     st.session_state.excipients.pop(index)
+
+# Function to export data to Excel
+def export_to_excel(pre_lyo_df, post_recon_df, recon_df, mass_data, volume_data, 
+                   components, pre_concentrations, post_concentrations, figures):
+    """Create an Excel file with all calculation results and graphs."""
+    output = BytesIO()
+    
+    with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+        # Write DataFrames to different sheets
+        pre_lyo_df.to_excel(writer, sheet_name='Pre-Lyophilization', index=False)
+        post_recon_df.to_excel(writer, sheet_name='Post-Reconstitution', index=False)
+        recon_df.to_excel(writer, sheet_name='Reconstitution Details', index=False)
+        
+        # Create a sheet for component comparison
+        comp_df = pd.DataFrame({
+            'Component': components,
+            'Pre-Lyophilization (mg/mL)': pre_concentrations,
+            'Post-Reconstitution (mg/mL)': post_concentrations
+        })
+        comp_df.to_excel(writer, sheet_name='Component Comparison', index=False)
+        
+        # Get the workbook and create a format for headers
+        workbook = writer.book
+        header_format = workbook.add_format({
+            'bold': True,
+            'fg_color': '#D7E4BC',
+            'border': 1
+        })
+        
+        # Add the figures to a separate sheet
+        worksheet = workbook.add_worksheet('Visualizations')
+        
+        # Save each figure
+        row = 0
+        for name, fig in figures.items():
+            imgdata = BytesIO()
+            fig.savefig(imgdata, format='png', bbox_inches='tight')
+            worksheet.insert_image(row, 0, '', {'image_data': imgdata})
+            row += 30  # Space for next image
+        
+        # Adjust column widths
+        for sheet in writer.sheets.values():
+            sheet.set_column('A:Z', 15)
+            
+    return output
 
 st.title("Lyophilized Drug Product Reconstitution Calculator")
 
@@ -202,7 +249,7 @@ if st.session_state.calculate_clicked:
     with col1:
         st.subheader("Masses")
         
-        fig, ax = plt.subplots(figsize=(10, 6))
+        fig1, ax = plt.subplots(figsize=(10, 6))
         
         # Define positions and width
         categories = mass_data['Category']
@@ -234,7 +281,7 @@ if st.session_state.calculate_clicked:
             ax.text(i, total_height + 0.1, f'{total_height:.1f}', 
                     ha='center', va='bottom', color='black')
             
-            # Customize the plot
+        # Customize the plot
         ax.set_ylabel('Mass (g)')
         ax.set_title('Masses')
         ax.set_xticks(x)
@@ -242,12 +289,12 @@ if st.session_state.calculate_clicked:
         ax.legend(loc='upper right', frameon = True, fancybox=True, shadow=True, framealpha=1, facecolor='white')
         
         plt.tight_layout()
-        st.pyplot(fig)
+        st.pyplot(fig1)
 
     with col2:
         st.subheader("Volumes")
         
-        fig, ax = plt.subplots(figsize=(10, 6))
+        fig2, ax = plt.subplots(figsize=(10, 6))
         
         # Define positions and width
         categories = volume_data['Category']
@@ -287,7 +334,7 @@ if st.session_state.calculate_clicked:
                     ha='center', va='bottom', color='black')
         
         plt.tight_layout()
-        st.pyplot(fig)
+        st.pyplot(fig2)
 
     # Component comparison visualization
     st.subheader("Component Concentration Comparison")
@@ -298,7 +345,7 @@ if st.session_state.calculate_clicked:
     post_concentrations = [drug_conc_after] + excipient_conc_after
     
     if components:
-        fig, ax = plt.subplots(figsize=(12, 6))
+        fig3, ax = plt.subplots(figsize=(12, 6))
         
         x = np.arange(len(components))
         width = 0.35
@@ -324,9 +371,40 @@ if st.session_state.calculate_clicked:
                            ha='center', va='bottom')
         
         plt.tight_layout()
-        st.pyplot(fig)
+        st.pyplot(fig3)
     else:
         st.write("No components to compare.")
+        fig3 = plt.figure()  # Empty figure as placeholder
+
+    # Prepare figures for export
+    figures = {
+        'Masses': fig1,
+        'Volumes': fig2,
+        'Component Comparison': fig3
+    }
+    
+    # Create download button
+    excel_file = export_to_excel(
+        pre_lyo_df, 
+        post_recon_df, 
+        recon_df,
+        mass_data,
+        volume_data,
+        components,
+        pre_concentrations,
+        post_concentrations,
+        figures
+    )
+    
+    # Generate timestamp for filename
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    
+    st.download_button(
+        label="📥 Download Results as Excel",
+        data=excel_file.getvalue(),
+        file_name=f"lyophilization_calculation_{timestamp}.xlsx",
+        mime="application/vnd.ms-excel",
+    )
 
 # Always show methodology explanation
 with st.expander("Methodology and Calculations Explained"):
