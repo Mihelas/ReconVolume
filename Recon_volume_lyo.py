@@ -446,8 +446,4 @@ needed for reconstitution of lyophilized drug products, accounting for solid con
 displacement and density differences.
 """)
 
-st.sidebar.header("References")
-st.sidebar.markdown("""
-- USP <1> Injections and Implanted Drug Products
-- Ph. Eur. 5.1.1 Methods of Preparation of Sterile Products
-""")
+
